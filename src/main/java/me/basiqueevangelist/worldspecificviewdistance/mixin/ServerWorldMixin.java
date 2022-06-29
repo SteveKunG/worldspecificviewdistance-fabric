@@ -1,11 +1,7 @@
 package me.basiqueevangelist.worldspecificviewdistance.mixin;
 
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.MutableWorldProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -18,12 +14,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import me.basiqueevangelist.worldspecificviewdistance.WSVDPersistentState;
 import me.basiqueevangelist.worldspecificviewdistance.commands.CommandUtils;
 import net.minecraft.network.packet.s2c.play.ChunkLoadDistanceS2CPacket;
+import net.minecraft.network.packet.s2c.play.SimulationDistanceS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.registry.RegistryEntry;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -53,6 +53,14 @@ public abstract class ServerWorldMixin extends World {
         LOGGER.debug("Setting {}'s view distance to {}", player.getEntityName(), viewDistance);
 
         player.networkHandler.sendPacket(new ChunkLoadDistanceS2CPacket(viewDistance - 1));
+
+        int simulationDistance = state.getLocalSimulationDistance();
+        if (simulationDistance == 0)
+            simulationDistance = mgr.getSimulationDistance() + 1;
+
+        LOGGER.debug("Setting {}'s simulation distance to {}", player.getEntityName(), simulationDistance);
+
+        player.networkHandler.sendPacket(new SimulationDistanceS2CPacket(simulationDistance - 1));
     }
     
     @Inject(method = "<init>*", at = @At(value = "RETURN"), require = 1)
@@ -70,5 +78,13 @@ public abstract class ServerWorldMixin extends World {
         LOGGER.debug("Setting {}'s view distance to {}", CommandUtils.getRegistryId(server, getDimension()), viewDistance);
 
         cmgr.applyViewDistance(viewDistance - 1);
+
+        int simulationDistance = state.getLocalSimulationDistance();
+        if (simulationDistance == 0)
+            simulationDistance = pmgr.getSimulationDistance() + 1;
+
+        LOGGER.debug("Setting {}'s simulation distance to {}", CommandUtils.getRegistryId(server, getDimension()), simulationDistance);
+
+        cmgr.applySimulationDistance(simulationDistance - 1);
     }
 }
