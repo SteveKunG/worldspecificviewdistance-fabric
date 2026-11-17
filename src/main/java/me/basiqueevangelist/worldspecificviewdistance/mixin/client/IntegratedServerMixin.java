@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(IntegratedServer.class)
 public abstract class IntegratedServerMixin extends MinecraftServer {
-    public IntegratedServerMixin() {
+    IntegratedServerMixin() {
         super(null, null, null, null, null, null, null, null, null, false, null);
     }
 
